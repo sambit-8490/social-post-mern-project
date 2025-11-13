@@ -34,17 +34,30 @@ const PostWidget = ({
   const main = palette.neutral.main;
   const primary = palette.primary.main;
 
+  // ✅ Use environment variable for backend API
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
   const patchLike = async () => {
-    const response = await fetch(`http://localhost:3001/posts/${postId}/like`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ userId: loggedInUserId }),
-    });
-    const updatedPost = await response.json();
-    dispatch(setPost({ post: updatedPost }));
+    try {
+      const response = await fetch(`${API_URL}/posts/${postId}/like`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ userId: loggedInUserId }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to update like:", response.statusText);
+        return;
+      }
+
+      const updatedPost = await response.json();
+      dispatch(setPost({ post: updatedPost }));
+    } catch (err) {
+      console.error("Error liking post:", err);
+    }
   };
 
   return (
@@ -55,19 +68,25 @@ const PostWidget = ({
         subtitle={location}
         userPicturePath={userPicturePath}
       />
-      <Typography color={main} sx={{ mt: "1rem" }}>
-        {description}
-      </Typography>
+
+      {description && (
+        <Typography color={main} sx={{ mt: "1rem" }}>
+          {description}
+        </Typography>
+      )}
+
       {picturePath && (
         <img
           width="100%"
           height="auto"
           alt="post"
           style={{ borderRadius: "0.75rem", marginTop: "0.75rem" }}
-          src={`http://localhost:3001/assets/${picturePath}`}
+          src={`${API_URL}/assets/${picturePath}`}
         />
       )}
+
       <FlexBetween mt="0.25rem">
+        {/* Like + Comment Section */}
         <FlexBetween gap="1rem">
           <FlexBetween gap="0.3rem">
             <IconButton onClick={patchLike}>
@@ -92,12 +111,16 @@ const PostWidget = ({
           <ShareOutlined />
         </IconButton>
       </FlexBetween>
+
+      {/* Comments Section */}
       {isComments && (
         <Box mt="0.5rem">
           {comments.map((comment, i) => (
-            <Box key={`${name}-${i}`}>
+            <Box key={`${postId}-comment-${i}`}>
               <Divider />
-              <Typography sx={{ color: main, m: "0.5rem 0", pl: "1rem" }}>
+              <Typography
+                sx={{ color: main, m: "0.5rem 0", pl: "1rem" }}
+              >
                 {comment}
               </Typography>
             </Box>

@@ -8,25 +8,45 @@ const PostsWidget = ({ userId, isProfile = false }) => {
   const posts = useSelector((state) => state.posts);
   const token = useSelector((state) => state.token);
 
+  // ✅ Use env variable for backend URL
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
   const getPosts = async () => {
-    const response = await fetch("http://localhost:3001/posts", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await response.json();
-    dispatch(setPosts({ posts: data }));
+    try {
+      const response = await fetch(`${API_URL}/posts`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch posts:", response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      dispatch(setPosts({ posts: data }));
+    } catch (err) {
+      console.error("Error fetching posts:", err);
+    }
   };
 
   const getUserPosts = async () => {
-    const response = await fetch(
-      `http://localhost:3001/posts/${userId}/posts`,
-      {
+    try {
+      const response = await fetch(`${API_URL}/posts/${userId}/posts`, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch user posts:", response.statusText);
+        return;
       }
-    );
-    const data = await response.json();
-    dispatch(setPosts({ posts: data }));
+
+      const data = await response.json();
+      dispatch(setPosts({ posts: data }));
+    } catch (err) {
+      console.error("Error fetching user posts:", err);
+    }
   };
 
   useEffect(() => {
@@ -35,7 +55,10 @@ const PostsWidget = ({ userId, isProfile = false }) => {
     } else {
       getPosts();
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, isProfile]);
+
+  if (!posts || posts.length === 0) return <p>No posts found.</p>;
 
   return (
     <>

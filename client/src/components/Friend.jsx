@@ -19,21 +19,30 @@ const Friend = ({ friendId, name, subtitle, userPicturePath }) => {
   const main = palette.neutral.main;
   const medium = palette.neutral.medium;
 
+  // ✅ Use environment variable for API base URL
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
   const isFriend = friends.find((friend) => friend._id === friendId);
 
   const patchFriend = async () => {
-    const response = await fetch(
-      `http://localhost:3001/users/${_id}/${friendId}`,
-      {
+    try {
+      const response = await fetch(`${API_URL}/users/${_id}/${friendId}`, {
         method: "PATCH",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update friend status");
       }
-    );
-    const data = await response.json();
-    dispatch(setFriends({ friends: data }));
+
+      const data = await response.json();
+      dispatch(setFriends({ friends: data }));
+    } catch (err) {
+      console.error("Error updating friend:", err);
+    }
   };
 
   return (
@@ -64,8 +73,9 @@ const Friend = ({ friendId, name, subtitle, userPicturePath }) => {
           </Typography>
         </Box>
       </FlexBetween>
+
       <IconButton
-        onClick={() => patchFriend()}
+        onClick={patchFriend}
         sx={{ backgroundColor: primaryLight, p: "0.6rem" }}
       >
         {isFriend ? (

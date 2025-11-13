@@ -17,26 +17,39 @@ const UserWidget = ({ userId, picturePath }) => {
   const { palette } = useTheme();
   const navigate = useNavigate();
   const token = useSelector((state) => state.token);
+
   const dark = palette.neutral.dark;
   const medium = palette.neutral.medium;
   const main = palette.neutral.main;
 
+  // ✅ Use env variable for backend base URL
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
   const getUser = async () => {
-    const response = await fetch(`http://localhost:3001/users/${userId}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await response.json();
-    setUser(data);
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch user:", response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      setUser(data);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    }
   };
 
   useEffect(() => {
     getUser();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   const {
     firstName,
@@ -72,7 +85,9 @@ const UserWidget = ({ userId, picturePath }) => {
             >
               {firstName} {lastName}
             </Typography>
-            <Typography color={medium}>{friends.length} friends</Typography>
+            <Typography color={medium}>
+              {friends?.length || 0} friends
+            </Typography>
           </Box>
         </FlexBetween>
         <ManageAccountsOutlined />
@@ -99,13 +114,13 @@ const UserWidget = ({ userId, picturePath }) => {
         <FlexBetween mb="0.5rem">
           <Typography color={medium}>Who's viewed your profile</Typography>
           <Typography color={main} fontWeight="500">
-            {viewedProfile}
+            {viewedProfile || 0}
           </Typography>
         </FlexBetween>
         <FlexBetween>
-          <Typography color={medium}>Impressions of your post</Typography>
+          <Typography color={medium}>Impressions of your posts</Typography>
           <Typography color={main} fontWeight="500">
-            {impressions}
+            {impressions || 0}
           </Typography>
         </FlexBetween>
       </Box>

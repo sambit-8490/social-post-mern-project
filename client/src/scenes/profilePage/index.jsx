@@ -1,3 +1,4 @@
+
 import { Box, useMediaQuery } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
@@ -14,18 +15,32 @@ const ProfilePage = () => {
   const token = useSelector((state) => state.token);
   const isNonMobileScreens = useMediaQuery("(min-width:1000px)");
 
+  // ✅ Use environment variable for backend URL
+  const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3001";
+
   const getUser = async () => {
-    const response = await fetch(`http://localhost:3001/users/${userId}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await response.json();
-    setUser(data);
+    try {
+      const response = await fetch(`${API_URL}/users/${userId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!response.ok) {
+        console.error("Failed to fetch user:", response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      setUser(data);
+    } catch (err) {
+      console.error("Error fetching user:", err);
+    }
   };
 
   useEffect(() => {
     getUser();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId]);
 
   if (!user) return null;
 
@@ -39,11 +54,14 @@ const ProfilePage = () => {
         gap="2rem"
         justifyContent="center"
       >
+        {/* Left Column */}
         <Box flexBasis={isNonMobileScreens ? "26%" : undefined}>
           <UserWidget userId={userId} picturePath={user.picturePath} />
           <Box m="2rem 0" />
           <FriendListWidget userId={userId} />
         </Box>
+
+        {/* Main Feed */}
         <Box
           flexBasis={isNonMobileScreens ? "42%" : undefined}
           mt={isNonMobileScreens ? undefined : "2rem"}
